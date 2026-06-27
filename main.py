@@ -1,9 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import json
 
 app = FastAPI()
 
-posts = []
+
+try:
+    with open("blogs.json", "r") as f:
+        posts = json.load(f)
+except:
+    posts = []
 
 class Post(BaseModel):
     title: str
@@ -22,7 +28,12 @@ def root():
 def post_blog(post: Post):
     post_dict = post.model_dump()
     post_dict["id"] = len(posts) + 1
+
     posts.append(post_dict)
+    ##Update complete blog
+    with open("blogs.json", "w") as f:
+        json.dump(posts, f)
+
     return post_dict
 
 ##Get all posts
@@ -47,6 +58,8 @@ def edit_blog(post_id: int, updated_post: Post):
             post["content"] = updated_post.content
             post["author"] = updated_post.author
             post["published"] = updated_post.published
+            with open("blogs.json", "w") as f:
+                json.dump(posts, f)
             return post
         
     raise HTTPException(status_code = 404, detail = "Post not found")
@@ -57,7 +70,7 @@ def del_blog(post_id: int):
     for post in posts:
         if post["id"] == post_id:
             posts.remove(post)
+            with open("blogs.json", "w") as f:
+                json.dump(posts, f)
             return {"message": f"Post {post_id} deleted"}
     raise HTTPException(status_code=404, detail="Post not found")
-
-
